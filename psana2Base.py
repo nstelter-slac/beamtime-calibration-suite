@@ -34,6 +34,7 @@ class PsanaBase(object):
     ##        self.setupPsana()
 
     def get_ds(self, run=None):
+        # run,exp declared in basicSuiteScript, this function should be there of run var moved here
         if run is None:
             run = self.run
         return DataSource(exp=self.exp, run=run, intg_det="epixhr", max_events=self.maxNevents) # noqa: F405

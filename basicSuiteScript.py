@@ -1,4 +1,3 @@
-import argparse
 import numpy as np
 import os   
 from rixSuiteConfig import experimentHash
@@ -80,101 +79,6 @@ class BasicSuiteScript(PsanaBase):
                 self.fluxSign = 1
         except Exception:
             self.fluxSource = None
-
-        parser = argparse.ArgumentParser(
-            description="Configures calibration suite, overriding experimentHash",
-            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        )
-        parser.add_argument("-e", "--exp", help="experiment")
-        parser.add_argument("-l", "--location", help="hutch location, e.g. MfxEndstation or DetLab")
-        parser.add_argument("-r", "--run", type=int, help="run")
-        parser.add_argument("-R", "--runRange", help="run range, format ...")
-        parser.add_argument("--fivePedestalRun", type=int, help="5 pedestal run")
-        parser.add_argument("--fakePedestal", type=str, help="fake pedestal file")
-        parser.add_argument("-c", "--camera", type=int, help="camera.n")
-        parser.add_argument("-p", "--path", type=str, help="the base path to the output directory")
-        parser.add_argument("-n", "--nModules", type=int, help="nModules")
-        parser.add_argument(
-            "-d", "--detType", type=str, default="", help="Epix100, Epix10ka, Epix10kaQuad, Epix10ka2M, ..."
-        )
-        parser.add_argument("--maxNevents", type=int, default="666666", help="max number of events to analyze")
-        parser.add_argument(
-            "--skipNevents", type=int, default=0, help="max number of events to skip at the start of each step"
-        )
-        parser.add_argument(
-            "--configScript",
-            type=str,
-            default="experimentSuiteConfig.py",
-            help="name of python config file to load if any",
-        )
-        parser.add_argument("--detObj", help='"raw", "calib", "image"')
-        parser.add_argument("-f", "--file", type=str, help="run analysis only on file")
-        parser.add_argument("-L", "--label", type=str, help="analysis label")
-        parser.add_argument("-t", "--threshold", help="threshold (ADU or keV or wave8) depending on --detObj")
-        parser.add_argument("--fluxCut", type=float, help="minimum flux to be included in analysis")
-        parser.add_argument(
-            "--special",
-            type=str,
-            help="comma-separated list of special behaviors - maybe this is too lazy.\
-                E.g. positiveParity,doKazEvents,...",
-        )
-        args = parser.parse_args()
-
-        ##mymodule = importlib.import_module(full_module_name)
-
-        ## for standalone analysis
-        self.file = args.file
-        self.label = ""
-        if args.label is not None:
-            self.label = args.label
-
-        ## analyzing xtc
-        if args.run is not None:
-            self.run = args.run
-        if args.camera is not None:
-            self.camera = args.camera
-        if args.exp is not None:
-            self.exp = args.exp
-        if args.location is not None:
-            self.location = args.location
-        if args.maxNevents is not None:
-            self.maxNevents = args.maxNevents
-        if args.skipNevents is not None:
-            self.skipNevents = args.skipNevents
-        if args.path is not None:
-            self.outputDir = args.path
-        self.detObj = args.detObj
-        if args.threshold is not None:
-            self.threshold = eval(args.threshold)
-        else:
-            self.threshold = None
-        if args.fluxCut is not None:
-            self.fluxCut = args.fluxCut
-        try:
-            self.runRange = eval(args.runRange)  ## in case needed
-        except Exception:
-            self.runRange = None
-
-        self.fivePedestalRun = args.fivePedestalRun  ## in case needed
-        self.fakePedestal = args.fakePedestal  ## in case needed
-        if self.fakePedestal is not None:
-            self.fakePedestalFrame = np.load(self.fakePedestal)  ##cast to uint32???
-
-        if args.detType == "":
-            ## assume epix10k for now
-            if args.nModules is not None:
-                self.detType = self.ePix10k_cameraTypes[args.nModules]
-        else:
-            self.detType = args.detType
-
-        self.special = args.special
-        ## done with configuration
-
-        self.ds = None
-        self.det = None  ## do we need multiple dets in an array? or self.secondDet?
-
-        ##self.setupPsana()
-        ##do this later or skip for -file
 
     def setROI(self, roiFile=None, roi=None):
         """Call with both file name and roi to save roi to file and use,

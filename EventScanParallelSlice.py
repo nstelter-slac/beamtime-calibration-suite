@@ -1,10 +1,13 @@
 from basicSuiteScript import BasicSuiteScript, sortArrayByList
 from matplotlib.ticker import AutoMinorLocator
 from mpi4py import MPI
+from argParser import parseAndSetCmdlineArgs
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
 
+import inspect
+from pprint import pprint
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 size = comm.Get_size()
@@ -134,6 +137,8 @@ class EventScanParallel(BasicSuiteScript):
 
 if __name__ == "__main__":
     esp = EventScanParallel()
+    parseAndSetCmdlineArgs(esp)
+    pprint(inspect.getmembers(esp))
     print("have built a", esp.className, "class")
     if esp.file is not None:
         esp.analyze_h5(esp.file, esp.label)
