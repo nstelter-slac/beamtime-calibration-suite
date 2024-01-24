@@ -60,7 +60,9 @@ class PsanaBase(object):
 
         try:
             self.mfxDg1 = self.myrun.Detector("MfxDg1BmMon")
-        except Exception:
+        except Exception as e:
+            print(f"An exception occurred: {e}")
+            logging.exception(f"An exception occurred: {e}")
             self.mfxDg1 = None
             print("No flux source found")
             logger.info("No flux source found")

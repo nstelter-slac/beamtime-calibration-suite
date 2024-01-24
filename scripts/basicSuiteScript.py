@@ -113,10 +113,10 @@ class BasicSuiteScript(PsanaBase):
                     frame[r, colOffset : colOffset + self.detColsPerBank] -= rowCM
                 except Exception as e:
                     print(f"An exception occurred: {e}")
-                    logging.error(f"An exception occurred: {e}")
+                    logging.exception(f"An exception occurred: {e}")
                     rowCM = -666
                     print("rowCM problem")
-                    logger.error("rowCM problem")
+                    logger.exception("rowCM problem")
                     print(frame[r, colOffset : colOffset + self.detColsPerBank])
 
                 colOffset += self.detColsPerBank

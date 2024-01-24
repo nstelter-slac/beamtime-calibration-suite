@@ -78,16 +78,17 @@ class EventScanParallel(BasicSuiteScript):
             plt.savefig(fileName)
             plt.close()
 
-            if True:
-                ax = plt.subplot()
-                ax.hist(pixels[i], 100)
-                plt.xlabel("Pixel ADU")
-                plt.title("Event scan projection of pixel %d" % (i))
-                fileName = "%s/%s_r%d_c%d_%s_pixel%d_hist.png" % (self.outputDir, self.__class__.__name__, self.run, self.camera, label, i)
-                logging.info("Writing plot: " + fileName)
-                plt.savefig(fileName)
-                plt.close()
+            ax = plt.subplot()
+            ax.hist(pixels[i], 100)
+            plt.xlabel("Pixel ADU")
+            plt.title("Event scan projection of pixel %d" % (i))
+            fileName = "%s/%s_r%d_c%d_%s_pixel%d_hist.png" % (self.outputDir, self.__class__.__name__, self.run, self.camera, label, i)
+            logging.info("Writing plot: " + fileName)
+            plt.savefig(fileName)
+            plt.close()
 
+    # Doesn't work atm b/c undefined functions
+    '''
     def analyzeData(self, delays, data, label):
         edge = np.zeros(data.shape[0])
         for m in range(data.shape[1]):
@@ -100,6 +101,7 @@ class EventScanParallel(BasicSuiteScript):
                     coeff, var = curve_fit(f, delays, d, p0=p0) # noqa: F821
                     edge[m, r, c] = coeff[1]
         return edge
+    '''
 
     def analyze_h5(self, dataFile, label):
         data = h5py.File(dataFile)
@@ -113,7 +115,9 @@ class EventScanParallel(BasicSuiteScript):
             fileName = "%s/bitSlice_c%d_r%d_%s.npy" % (self.outputDir, self.camera, self.run, self.exp), np.array(bitSlice)
             logging.info("Writing plot: " + fileName)
             np.save(fileName)
-        except Exception:
+        except Exception as e:
+            print(f"An exception occurred: {e}")
+            logging.exception(f"An exception occurred: {e}")
             pass
 
         pulseIds.sort()
@@ -134,14 +138,16 @@ if __name__ == "__main__":
     esp = EventScanParallel()
     print("have built a" + esp.className + "class")
     logging.info("have built a" + esp.className + "class")
+
+    # Standalone analysis
     if esp.file is not None:
         esp.analyze_h5(esp.file, esp.label)
         print("done with standalone analysis of %s, exiting" % (esp.file))
         logging.info("done with standalone analysis of %s, exiting" % (esp.file))
         sys.exit(0)
 
+    # Parallel processing
     esp.setupPsana()
-
     fileNameSmallData = "%s/%s_c%d_r%d_n%d.h5" % (esp.outputDir, esp.className, esp.camera, esp.run, size)
     logging.info("Reading in smalldata: " + fileNameSmallData)
     smd = esp.ds.smalldata(filename=fileNameSmallData)
@@ -152,12 +158,16 @@ if __name__ == "__main__":
     eventNumbers = []
     bitSliceSum = None
     evtGen = esp.myrun.events()
+
+    # Analyze events
     for nevt, evt in enumerate(evtGen):
         if evt is None:
             continue
+
         frames = esp.getRawData(evt, gainBitsMasked=True)
         if frames is None:
             continue
+
         if esp.fakePedestal is not None:
             frames = frames.astype("float") - esp.fakePedestalFrame
             if esp.special is not None and "commonMode" in esp.special:
@@ -178,7 +188,9 @@ if __name__ == "__main__":
 
             try:
                 bitSliceSum += r
-            except Exception:
+            except Exception as e:
+                print(f"An exception occurred: {e}")
+                logging.exception(f"An exception occurred: {e}")
                 bitSliceSum = r.astype(np.uint32)
 
         smd.event(

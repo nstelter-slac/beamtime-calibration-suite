@@ -99,7 +99,7 @@ class AnalyzeH5(object):
             #self.plotEnergyHist(energyHist, self.fileNameInfo)
         except Exception as e:
             print(f"An exception occurred: {e}")
-            logging.error(f"An exception occurred: {e}")
+            logging.exception(f"An exception occurred: {e}")
             pass
 
         fileName = "%s/r%d_clusters.npy" % (self.fileNameInfo.outputDir, self.fileNameInfo.run)
@@ -159,7 +159,7 @@ class AnalyzeH5(object):
                 pixelEcut = np.bitwise_and(
                     pixelEcut0, energy < highEnergyCut
                 )
-                nPixelClusters = (pixelEcut > 0).sum()
+                nPixelClusters = np.count_nonzero(pixelEcut)
 
                 mean = std = mu = sigma = 0
 
@@ -186,7 +186,7 @@ class AnalyzeH5(object):
                         #ax.plot(bins, fittedFunc, color="b")
                     except Exception as e:
                         print(f"An exception occurred: {e}")
-                        logging.error(f"An exception occurred: {e}")
+                        logging.exception(f"An exception occurred: {e}")
                         pass
 
                     ax.set_xlabel("energy (keV)")
