@@ -47,7 +47,7 @@ class PsanaBase(object):
         except Exception:
             self.step_value = self.step_docstring = None
 
-        # make this less dumb to accomodate epixM etc, use a dict etc.
+        # make this less dumb to accommodate epixM etc, use a dict etc.
         self.det = self.myrun.Detector("epixhr")
         # could set to None and reset with first frame I guess, or does the det object know?
         self.detRows = 288
