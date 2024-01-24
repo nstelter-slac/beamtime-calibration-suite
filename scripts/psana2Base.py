@@ -1,37 +1,30 @@
 # ignoring from ruff for now, need sort out later along
 # with other noqa in this file
 from psana import * # noqa: F403
-
-## standard
+# standard
 from mpi4py import MPI
-
-##from PSCalib.NDArrIO import load_txt
-
-## for parallelism
+# for parallelism
 import os
+import logging
 
+logger = logging.getLogger(__name__)
+
+# psana2 only
 os.environ["PS_SMD_N_EVENTS"] = "50"
 os.environ["PS_SRV_NODES"] = "1"
-## psana2 only
-
-comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
-size = comm.Get_size()
 
 
 class PsanaBase(object):
     def __init__(self, analysisType="scan"):
         self.psanaType = 2
         print("in psana2Base")
+        logger.info("in psana2Base")
         self.gainModes = {"FH": 0, "FM": 1, "FL": 2, "AHL-H": 3, "AML-M": 4, "AHL-L": 5, "AML-L": 6}
         self.ePix10k_cameraTypes = {1: "Epix10ka", 4: "Epix10kaQuad", 16: "Epix10ka2M"}
-        ##self.g0cut = 1<<15 ## 2022
-        self.g0cut = 1 << 14  ## 2023
+        self.g0cut = 1 << 14  # 2023
         self.gainBitsMask = self.g0cut - 1
 
         self.allowed_timestamp_mismatch = 1000
-
-    ##        self.setupPsana()
 
     def get_ds(self, run=None):
         if run is None:
@@ -39,7 +32,8 @@ class PsanaBase(object):
         return DataSource(exp=self.exp, run=run, intg_det="epixhr", max_events=self.maxNevents) # noqa: F405
 
     def setupPsana(self):
-        ##print("have built basic script class, exp %s run %d" %(self.exp, self.run))
+        print("have built basic script class, exp %s run %d" %(self.exp, self.run))
+        logger.info("have built basic script class, exp %s run %d" %(self.exp, self.run))
         if self.runRange is None:
             self.ds = self.get_ds(self.run)
         else:
@@ -53,11 +47,9 @@ class PsanaBase(object):
         except Exception:
             self.step_value = self.step_docstring = None
 
-        ##        self.det = Detector('%s.0:%s.%d' %(self.location, self.detType, self.camera), self.ds.env())
-        ## make this less dumb to accomodate epixM etc.
-        ## use a dict etc.
+        # make this less dumb to accomodate epixM etc, use a dict etc.
         self.det = self.myrun.Detector("epixhr")
-        ## could set to None and reset with first frame I guess, or does the det object know?
+        # could set to None and reset with first frame I guess, or does the det object know?
         self.detRows = 288
         self.detCols = 384
         self.detColsPerBank = 96
@@ -70,12 +62,13 @@ class PsanaBase(object):
             self.mfxDg1 = self.myrun.Detector("MfxDg1BmMon")
         except Exception:
             self.mfxDg1 = None
-            print("No flux source found")  ## if self.verbose?
+            print("No flux source found")
+            logger.info("No flux source found")
         try:
             self.mfxDg2 = self.myrun.Detector("MfxDg2BmMon")
         except Exception:
             self.mfxDg2 = None
-        ## fix hardcoding in the fullness of time
+        # fix hardcoding in the fullness of time
         self.detEvts = 0
         self.flux = None
 
@@ -90,10 +83,8 @@ class PsanaBase(object):
         except Exception:
             self.controlData = None
 
-    ##        if self.mfxDg1 is None:
-
     def getFivePedestalRunInfo(self):
-        ## could do load_txt but would require full path so
+        # could do load_txt but would require full path so
         if self.det is None:
             self.setupPsana()
 
@@ -116,8 +107,8 @@ class PsanaBase(object):
         return evt
 
     def getNextEvtFromGen(self, gen):
-        ## this is needed to get flux information out of phase with detector
-        ## information in mixed lcls1/2 mode
+        # this is needed to get flux information out of phase with detector
+        # information in mixed lcls1/2 mode
         for nevt, evt in enumerate(gen):
             try:
                 self.flux = self._getFlux(evt)
@@ -126,7 +117,7 @@ class PsanaBase(object):
             if self.det.raw.raw(evt) is None:
                 continue
             self.detEvts += 1
-            ## should check for beam code here to be smarter
+            # should check for beam code here to be smarter
             return self.detEvts, evt
 
     def matchedDetEvt(self):
@@ -164,11 +155,14 @@ class PsanaBase(object):
             try:
                 self.run = self.runRange[i + 1]
                 print("switching to run %d" % (self.run))
+                logger.info("switching to run %d" % (self.run))
                 self.ds = self.get_ds(self.run)
             except Exception:
                 print("have run out of new runs")
+                logger.info("have run out of new runs")
                 return None
-            ##print("get event from new run")
+            print("get event from new run")
+            logger.info("get event from new run")
             evt = next(self.ds.events())
             return evt
 
@@ -184,10 +178,8 @@ class PsanaBase(object):
         if self.mfxDg1 is None:
             return None
 
-        ##        f = self.mfxDg1.raw.peakAmplitude(evt)[self.fluxChannels].mean()*self.fluxSign
         try:
             f = self.mfxDg1.raw.peakAmplitude(evt)[self.fluxChannels].mean() * self.fluxSign
-            ##print(f)
         except Exception:
             return None
         try:
@@ -198,7 +190,6 @@ class PsanaBase(object):
         return f
 
     def getFlux(self, evt):
-        ##return 1
         return self.flux
 
     def get_evrs(self):
@@ -218,7 +209,6 @@ class PsanaBase(object):
 
     def isKicked(self, evt):
         allcodes = self.getEventCodes(evt)
-        ##print(allcodes)
         return allcodes[self.desiredCodes["120Hz"]]
 
     def get_config(self):
@@ -233,23 +223,16 @@ class PsanaBase(object):
     def getEvt(self):
         try:
             evt = next(self.myrun.events())
-            ## dumb to do the below everywhere, should best not call this method
-            ##try:
-            ##    self.flux = self._getFlux(evt)
-            ##except:
-            ##    pass
-
         except StopIteration:
             return None
         return evt
 
     def getScanValue(self, step, useStringInfo=False):
-        ##print(self.step_value(step),self.step_docstring(step),useStringInfo)
+        #print(self.step_value(step),self.step_docstring(step),useStringInfo)
         if useStringInfo:
             payload = self.step_docstring(step)
-            ##print(payload)
             sv = eval(payload.split()[-1][:-1])
-            print("step", int(self.step_value(step)), sv)
+            #print("step", int(self.step_value(step)), sv)
             return sv
         return self.step_value(step)
 
@@ -275,14 +258,4 @@ class PsanaBase(object):
         evensEvenRowsOddsOddRows = frameRegion[::2, ::2] + frameRegion[1::2, 1::2]
         oddsEvenRowsEvensOddRows = frameRegion[1::2, ::2] + frameRegion[::2, 1::2]
         delta = evensEvenRowsOddsOddRows.mean() - oddsEvenRowsEvensOddRows.mean()
-        ##print("delta:", delta)
         return delta > 0
-
-
-if __name__ == "__main__":
-    # BasicSuiteScript 'is a' PsanaBase, so why do here? ignore from ruff for now
-    bSS = BasicSuiteScript() # noqa: F405
-    print("have built a BasicSuiteScript")
-    bSS.setupPsana()
-    evt = bSS.getEvt()
-    print(dir(evt))
